@@ -11,3 +11,5 @@
 *.gz
 *.gz
 node_modules/.bin/acorn
+node_modules
+
