@@ -1,27 +1,32 @@
-import type { Metadata } from 'next'
-import { Inter, Sora } from 'next/font/google'
-import './globals.css'
-import Sidebar from '@/components/layout/Sidebar'
+import type { Metadata } from "next";
+import { Inter, Sora } from "next/font/google";
+import "./globals.css";
+import Sidebar from "@/components/layout/Sidebar";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const sora = Sora({ subsets: ['latin'], variable: '--font-sora' })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
 
 export const metadata: Metadata = {
-  title: 'Academy Management System',
-  description: 'Student records, fees, and test results',
-}
+  title: "Academy Management",
+  description: "Student records, fees, attendance and test results",
+  viewport: "width=device-width, initial-scale=1",
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${sora.variable} font-sans bg-slate-50 text-slate-900`}>
+      <body
+        className={`${inter.variable} ${sora.variable} font-sans bg-slate-50 text-slate-900`}
+      >
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
+          <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
         </div>
       </body>
     </html>
-  )
+  );
 }

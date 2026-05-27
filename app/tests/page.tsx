@@ -1,26 +1,67 @@
-import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function TestsPage() {
   const { data: tests } = await supabase
-    .from('tests')
-    .select('*, classes(name, section), subjects(name)')
-    .order('test_date', { ascending: false })
+    .from("tests")
+    .select("*, classes(name, section), subjects(name)")
+    .order("test_date", { ascending: false });
 
   return (
-    <div>
+    <div className="pt-14 sm:pt-0">
       <div className="page-header">
         <h1 className="page-title">Tests</h1>
         <Link href="/tests/new" className="btn-primary">
-          <Plus size={16} /> Create Test
+          <Plus size={16} />{" "}
+          <span className="hidden sm:inline">Create Test</span>
+          <span className="sm:hidden">New</span>
         </Link>
       </div>
 
-      <div className="p-6">
-        <div className="card overflow-hidden">
+      <div className="p-4 sm:p-6">
+        {/* Mobile */}
+        <div className="sm:hidden space-y-3">
+          {(tests || []).length === 0 && (
+            <div className="card p-8 text-center text-slate-400">
+              No tests yet. Create your first test.
+            </div>
+          )}
+          {(tests || []).map((t: any) => (
+            <div key={t.id} className="card p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-semibold text-slate-900 text-sm">
+                  {t.name}
+                </div>
+                <span className="badge-blue">{t.subjects?.name}</span>
+              </div>
+              <div className="text-xs text-slate-500 mb-3">
+                {t.classes?.name} {t.classes?.section} ·{" "}
+                {new Date(t.test_date).toLocaleDateString("en-PK")} ·{" "}
+                {t.total_marks} marks
+              </div>
+              <div className="flex gap-3">
+                <Link
+                  href={`/tests/${t.id}/marks`}
+                  className="text-blue-600 text-xs font-medium"
+                >
+                  Enter Marks →
+                </Link>
+                <Link
+                  href={`/tests/${t.id}`}
+                  className="text-slate-400 text-xs font-medium"
+                >
+                  View
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden sm:block card overflow-hidden">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
@@ -35,19 +76,28 @@ export default async function TestsPage() {
             <tbody className="divide-y divide-slate-100">
               {(tests || []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="table-td text-center text-slate-400 py-10">
-                    No tests yet. Create your first test.
+                  <td
+                    colSpan={6}
+                    className="table-td text-center text-slate-400 py-10"
+                  >
+                    No tests yet.
                   </td>
                 </tr>
               )}
               {(tests || []).map((t: any) => (
                 <tr key={t.id} className="hover:bg-slate-50">
-                  <td className="table-td font-medium text-slate-900">{t.name}</td>
+                  <td className="table-td font-medium text-slate-900">
+                    {t.name}
+                  </td>
                   <td className="table-td">
                     <span className="badge-blue">{t.subjects?.name}</span>
                   </td>
-                  <td className="table-td">{t.classes?.name} {t.classes?.section}</td>
-                  <td className="table-td">{new Date(t.test_date).toLocaleDateString('en-PK')}</td>
+                  <td className="table-td">
+                    {t.classes?.name} {t.classes?.section}
+                  </td>
+                  <td className="table-td">
+                    {new Date(t.test_date).toLocaleDateString("en-PK")}
+                  </td>
                   <td className="table-td">{t.total_marks}</td>
                   <td className="table-td">
                     <Link
@@ -70,5 +120,5 @@ export default async function TestsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
