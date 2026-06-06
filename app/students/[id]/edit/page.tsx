@@ -66,7 +66,10 @@ export default function EditStudentPage({
     if (err) {
       setError(err.message);
       setLoading(false);
-    } else router.push(`/students/${params.id}`);
+    } else {
+      router.refresh();
+      router.push(`/students/${params.id}`);
+    }
   };
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));

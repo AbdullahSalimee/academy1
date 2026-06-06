@@ -51,7 +51,10 @@ export default function NewStudentPage() {
     if (err) {
       setError(err.message);
       setLoading(false);
-    } else router.push("/students");
+    } else {
+      router.refresh();
+      router.push("/students");
+    }
   };
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));

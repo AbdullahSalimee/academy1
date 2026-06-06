@@ -1,26 +1,36 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const prevPathname = useRef<string | null>(null);
 
+  // On every pathname change, wait for page to settle then refresh server data
   useEffect(() => {
-    // Refresh data every time you switch back to this tab
-    const handler = () => {
-      if (document.visibilityState === "visible") {
-        router.refresh();
-      }
+    if (prevPathname.current !== null && prevPathname.current !== pathname) {
+      // Small delay so the new page renders first, then we refresh stale data
+      const t = setTimeout(() => router.refresh(), 100);
+      return () => clearTimeout(t);
+    }
+    prevPathname.current = pathname;
+  }, [pathname, router]);
+
+  // Refresh when tab becomes visible again
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") router.refresh();
     };
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [router]);
 
-  // Also refresh after every navigation (handles create/update flows)
+  // Refresh when window regains focus
   useEffect(() => {
-    router.refresh();
-  }, [pathname]);
+    window.addEventListener("focus", () => router.refresh());
+    return () => window.removeEventListener("focus", () => router.refresh());
+  }, [router]);
 
   return <>{children}</>;
 }
