@@ -22,7 +22,7 @@ export default async function StudentsPage({
     .from("students")
     .select("*, classes(name, section)")
     .order("name");
-  if (!showInactive) query = query.eq("is_active", true);
+  if (!showInactive) query = query.neq("is_active", false);
   if (classId) query = query.eq("class_id", classId);
   if (search) query = query.ilike("name", `%${search}%`);
 
