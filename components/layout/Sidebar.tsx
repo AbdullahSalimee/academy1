@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -9,11 +9,11 @@ import {
   BarChart3,
   BookOpen,
   CalendarCheck,
+  LogOut,
   Menu,
   X,
 } from "lucide-react";
-import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,29 +27,31 @@ const nav = [
 
 export default function Sidebar() {
   const path = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setOpen(false);
-  }, [path]);
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
 
-  const NavLinks = () => (
-    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+  const NavLinks = ({ onClick }: { onClick?: () => void }) => (
+    <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
       {nav.map(({ href, label, icon: Icon }) => {
         const active = path.startsWith(href);
         return (
           <Link
             key={href}
             href={href}
-            className={clsx(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+            onClick={onClick}
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
               active
-                ? "bg-blue-600 text-white"
-                : "text-slate-400 hover:bg-slate-800 hover:text-white",
-            )}
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+            }`}
           >
-            <Icon size={17} />
+            <Icon size={18} />
             {label}
           </Link>
         );
@@ -59,60 +61,88 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile top bar */}
-      <div className="sm:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 px-4 py-3 flex items-center justify-between border-b border-slate-700">
-        <span className="font-display font-bold text-white text-base">
-          Academy{" "}
-          <span className="text-blue-400 font-normal text-sm">Management</span>
-        </span>
+      {/* Mobile bottom tab bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-700 flex items-center justify-around px-1 py-2">
+        {nav.slice(0, 5).map(({ href, label, icon: Icon }) => {
+          const active = path.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg min-w-0 ${
+                active ? "text-blue-400" : "text-slate-500"
+              }`}
+            >
+              <Icon size={20} />
+              <span className="text-[10px] font-medium truncate">{label}</span>
+            </Link>
+          );
+        })}
         <button
-          onClick={() => setOpen(!open)}
-          className="text-slate-300 hover:text-white p-1"
+          onClick={() => setOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-2 py-1 text-slate-500"
         >
-          {open ? <X size={22} /> : <Menu size={22} />}
+          <Menu size={20} />
+          <span className="text-[10px] font-medium">More</span>
         </button>
       </div>
 
-      {/* Mobile overlay */}
+      {/* Mobile drawer (for extra nav items + logout) */}
       {open && (
-        <div
-          className="sm:hidden fixed inset-0 z-30 bg-black/50"
-          onClick={() => setOpen(false)}
-        />
+        <>
+          <div
+            className="sm:hidden fixed inset-0 z-50 bg-black/60"
+            onClick={() => setOpen(false)}
+          />
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 rounded-t-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-white font-semibold">More Options</span>
+              <button onClick={() => setOpen(false)} className="text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
+            {nav.slice(5).map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-slate-800"
+              >
+                <Icon size={18} />
+                <span className="text-sm font-medium">{label}</span>
+              </Link>
+            ))}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10"
+            >
+              <LogOut size={18} />
+              <span className="text-sm font-medium">Sign Out</span>
+            </button>
+          </div>
+        </>
       )}
-
-      {/* Mobile drawer */}
-      <aside
-        className={clsx(
-          "sm:hidden fixed top-0 left-0 z-40 h-full w-64 bg-slate-900 flex flex-col transition-transform duration-200",
-          open ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="px-5 py-4 mt-14 border-b border-slate-700">
-          <span className="text-xs text-slate-500 uppercase tracking-wider">
-            Navigation
-          </span>
-        </div>
-        <NavLinks />
-        <div className="px-3 py-4 border-t border-slate-700">
-          <div className="text-xs text-slate-500 px-3">Academy v1.0</div>
-        </div>
-      </aside>
 
       {/* Desktop sidebar */}
       <aside className="hidden sm:flex w-56 bg-slate-900 flex-col h-full shrink-0">
         <div className="px-5 py-5 border-b border-slate-700">
-          <span className="font-display font-bold text-white text-lg leading-tight">
-            Academy
+          <span className="font-bold text-white text-lg leading-tight">
+            🏫 Academy
             <br />
-            <span className="text-blue-400 text-sm font-normal">
-              Management
+            <span className="text-blue-400 text-xs font-normal">
+              Management System
             </span>
           </span>
         </div>
         <NavLinks />
-        <div className="px-3 py-4 border-t border-slate-700">
-          <div className="text-xs text-slate-500 px-3">Academy v1.0</div>
+        <div className="px-3 py-3 border-t border-slate-700">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-red-400 text-sm font-medium transition-colors"
+          >
+            <LogOut size={16} />
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

@@ -1,15 +1,20 @@
-import type { Metadata } from "next";
-import { Inter, Sora } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Academy Management",
-  description: "Student records, fees, attendance and test results",
-  viewport: "width=device-width, initial-scale=1",
+  description: "Student records, fees, attendance and results",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -19,10 +24,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${sora.variable} font-sans bg-slate-50 text-slate-900`}
-      >
-        <div className="flex h-screen overflow-hidden">
+      <body className={`${inter.className} bg-slate-100 text-slate-900`}>
+        <div className="flex h-dvh overflow-hidden">
           <Sidebar />
           <main className="flex-1 overflow-y-auto min-w-0">{children}</main>
         </div>

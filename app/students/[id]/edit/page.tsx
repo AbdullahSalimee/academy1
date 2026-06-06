@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Class } from "@/types";
 import Link from "next/link";
-import { ArrowLeft, Save, UserX } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 
 export default function EditStudentPage({
   params,
@@ -31,7 +31,7 @@ export default function EditStudentPage({
       supabase.from("students").select("*").eq("id", params.id).single(),
       supabase.from("classes").select("*").order("name"),
     ]).then(([{ data: s }, { data: cls }]) => {
-      if (s) {
+      if (s)
         setForm({
           name: s.name,
           father_name: s.father_name || "",
@@ -42,7 +42,6 @@ export default function EditStudentPage({
           default_monthly_fee: String(s.default_monthly_fee),
           is_active: s.is_active,
         });
-      }
       setClasses(cls || []);
     });
   }, [params.id]);
@@ -51,7 +50,6 @@ export default function EditStudentPage({
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const { error: err } = await supabase
       .from("students")
       .update({
@@ -65,7 +63,6 @@ export default function EditStudentPage({
         is_active: form.is_active,
       })
       .eq("id", params.id);
-
     if (err) {
       setError(err.message);
       setLoading(false);
@@ -75,61 +72,54 @@ export default function EditStudentPage({
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <div className="pt-14 sm:pt-0">
+    <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <div className="flex items-center gap-3">
-          <Link
-            href={`/students/${params.id}`}
-            className="text-slate-400 hover:text-slate-700"
-          >
-            <ArrowLeft size={18} />
+          <Link href={`/students/${params.id}`} className="text-slate-400">
+            <ArrowLeft size={20} />
           </Link>
           <h1 className="page-title">Edit Student</h1>
         </div>
       </div>
-
-      <div className="p-4 sm:p-6 max-w-2xl">
-        <div className="card p-5 sm:p-6">
+      <div className="p-4 max-w-lg mx-auto">
+        <div className="card p-5">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
               {error}
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Student Name *</label>
-                <input
-                  className="input"
-                  value={form.name}
-                  onChange={(e) => set("name", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Father's Name</label>
-                <input
-                  className="input"
-                  value={form.father_name}
-                  onChange={(e) => set("father_name", e.target.value)}
-                />
-              </div>
+            <div>
+              <label className="label">Student Name *</label>
+              <input
+                className="input"
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+              />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Class *</label>
-                <select
-                  className="input"
-                  value={form.class_id}
-                  onChange={(e) => set("class_id", e.target.value)}
-                >
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.section}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="label">Father's Name</label>
+              <input
+                className="input"
+                value={form.father_name}
+                onChange={(e) => set("father_name", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="label">Class *</label>
+              <select
+                className="input"
+                value={form.class_id}
+                onChange={(e) => set("class_id", e.target.value)}
+              >
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.section}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">Monthly Fee (Rs.) *</label>
                 <input
@@ -140,23 +130,12 @@ export default function EditStudentPage({
                   min="0"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Phone</label>
                 <input
                   className="input"
                   value={form.phone}
                   onChange={(e) => set("phone", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Admission Date</label>
-                <input
-                  type="date"
-                  className="input"
-                  value={form.admission_date}
-                  onChange={(e) => set("admission_date", e.target.value)}
                 />
               </div>
             </div>
@@ -168,24 +147,22 @@ export default function EditStudentPage({
                 onChange={(e) => set("address", e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-3 pt-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => set("is_active", e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm font-medium text-slate-700">
-                  Active Student
-                </span>
-              </label>
-            </div>
-            <div className="flex gap-3 pt-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => set("is_active", e.target.checked)}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-sm font-medium text-slate-700">
+                Active Student
+              </span>
+            </label>
+            <div className="flex gap-3 pt-1">
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary flex-1 sm:flex-none justify-center"
+                className="btn-primary flex-1 justify-center"
               >
                 <Save size={15} /> {loading ? "Saving..." : "Save Changes"}
               </button>

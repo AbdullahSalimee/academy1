@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -22,36 +22,40 @@ export default async function StudentsPage({
     .from("students")
     .select("*, classes(name, section)")
     .order("name");
-
   if (!showInactive) query = query.eq("is_active", true);
   if (classId) query = query.eq("class_id", classId);
   if (search) query = query.ilike("name", `%${search}%`);
 
-  const { data: students, error } = await query;
+  const { data: students } = await query;
   const list = students || [];
 
   return (
-    <div className="pt-14 sm:pt-0">
+    <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <h1 className="page-title">Students</h1>
-        <Link href="/students/new" className="btn-primary">
-          <Plus size={16} /> Add Student
+        <Link href="/students/new" className="btn-primary btn-sm">
+          <Plus size={15} /> Add
         </Link>
       </div>
 
       {/* Filters */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200">
-        <form className="flex flex-wrap gap-2">
+      <form className="px-4 py-3 bg-white border-b border-slate-200 space-y-2">
+        <div className="flex gap-2">
           <input
             name="search"
             defaultValue={search}
-            placeholder="Search student..."
-            className="input flex-1 min-w-[140px]"
+            placeholder="Search by name..."
+            className="input flex-1"
           />
+          <button type="submit" className="btn-primary btn-sm shrink-0">
+            <Search size={14} />
+          </button>
+        </div>
+        <div className="flex gap-2">
           <select
             name="class_id"
             defaultValue={classId || ""}
-            className="input w-36"
+            className="input flex-1"
           >
             <option value="">All Classes</option>
             {classes?.map((c) => (
@@ -68,125 +72,80 @@ export default async function StudentsPage({
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
-          <button type="submit" className="btn-primary btn-sm">
-            Filter
-          </button>
-          <Link href="/students" className="btn-secondary btn-sm">
+          <Link href="/students" className="btn-secondary btn-sm shrink-0">
             Reset
           </Link>
-        </form>
-      </div>
-
-      <div className="p-4 sm:p-6">
-        {/* Mobile card list */}
-        <div className="sm:hidden space-y-3">
-          {list.length === 0 && (
-            <div className="card p-8 text-center text-slate-400">
-              No students found.
-            </div>
-          )}
-          {list.map((s: any) => (
-            <div key={s.id} className="card p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <div className="font-semibold text-slate-900">{s.name}</div>
-                  <div className="text-xs text-slate-500">
-                    {s.father_name || "—"}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {s.is_active ? (
-                    <span className="badge-green">Active</span>
-                  ) : (
-                    <span className="badge-red">Inactive</span>
-                  )}
-                  <Link
-                    href={`/students/${s.id}`}
-                    className="text-blue-600 text-xs font-medium"
-                  >
-                    View →
-                  </Link>
-                </div>
-              </div>
-              <div className="flex gap-4 text-xs text-slate-600 mt-2">
-                <span>
-                  📚 {s.classes?.name} {s.classes?.section}
-                </span>
-                <span>
-                  💰 Rs. {Number(s.default_monthly_fee).toLocaleString()}
-                </span>
-              </div>
-              {s.phone && (
-                <div className="text-xs text-slate-500 mt-1">📞 {s.phone}</div>
-              )}
-            </div>
-          ))}
         </div>
+      </form>
 
-        {/* Desktop table */}
-        <div className="hidden sm:block card overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="table-th">Student Name</th>
-                <th className="table-th">Father Name</th>
-                <th className="table-th">Class</th>
-                <th className="table-th">Admission</th>
-                <th className="table-th">Monthly Fee</th>
-                <th className="table-th">Status</th>
-                <th className="table-th">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {list.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="table-td text-center text-slate-400 py-10"
-                  >
-                    No students found.
-                  </td>
-                </tr>
-              )}
-              {list.map((s: any) => (
-                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="table-td font-medium text-slate-900">
-                    {s.name}
-                  </td>
-                  <td className="table-td">{s.father_name || "—"}</td>
-                  <td className="table-td">
-                    {s.classes?.name} {s.classes?.section}
-                  </td>
-                  <td className="table-td">
-                    {new Date(s.admission_date).toLocaleDateString("en-PK")}
-                  </td>
-                  <td className="table-td">
-                    Rs. {Number(s.default_monthly_fee).toLocaleString()}
-                  </td>
-                  <td className="table-td">
-                    {s.is_active ? (
-                      <span className="badge-green">Active</span>
-                    ) : (
-                      <span className="badge-red">Inactive</span>
-                    )}
-                  </td>
-                  <td className="table-td">
-                    <Link
-                      href={`/students/${s.id}`}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-500">
-            {list.length} student(s)
+      <div className="p-4 space-y-2">
+        <p className="text-xs text-slate-400 font-medium">
+          {list.length} student{list.length !== 1 ? "s" : ""}
+        </p>
+
+        {list.length === 0 && (
+          <div className="card p-10 text-center text-slate-400">
+            <Users className="mx-auto mb-2 opacity-30" size={32} />
+            <p>No students found.</p>
+            <Link
+              href="/students/new"
+              className="text-blue-600 text-sm mt-2 inline-block"
+            >
+              Add first student →
+            </Link>
           </div>
-        </div>
+        )}
+
+        {list.map((s: any) => (
+          <Link
+            key={s.id}
+            href={`/students/${s.id}`}
+            className="card p-4 flex items-center gap-3 active:scale-[0.98] transition-transform block"
+          >
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+              <span className="text-blue-700 font-bold text-sm">
+                {s.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-slate-900 truncate">
+                {s.name}
+              </div>
+              <div className="text-xs text-slate-500 truncate">
+                {s.classes?.name} {s.classes?.section}{" "}
+                {s.father_name ? `· ${s.father_name}` : ""}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <span className={s.is_active ? "badge-green" : "badge-red"}>
+                {s.is_active ? "Active" : "Left"}
+              </span>
+              <span className="text-xs text-slate-400">
+                Rs. {Number(s.default_monthly_fee).toLocaleString()}
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
+  );
+}
+
+function Users({ className, size }: any) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
   );
 }

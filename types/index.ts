@@ -36,6 +36,16 @@ export interface Fee {
   created_at: string;
 }
 
+export interface FeePayment {
+  id: string;
+  fee_id: string;
+  amount_paid: number;
+  payment_date: string;
+  payment_method: "cash" | "bank" | "other";
+  notes: string | null;
+  created_at: string;
+}
+
 export interface Test {
   id: string;
   name: string;
@@ -78,4 +88,19 @@ export const MONTHS = [
   "October",
   "November",
   "December",
+];
+
+export const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];

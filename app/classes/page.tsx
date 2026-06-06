@@ -9,7 +9,6 @@ export default function ClassesPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [newClass, setNewClass] = useState({ name: "", section: "" });
   const [newSubject, setNewSubject] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const load = async () => {
     const [cls, sub] = await Promise.all([
@@ -26,7 +25,6 @@ export default function ClassesPage() {
 
   const addClass = async () => {
     if (!newClass.name) return;
-    setLoading(true);
     await supabase
       .from("classes")
       .insert({
@@ -34,12 +32,13 @@ export default function ClassesPage() {
         section: newClass.section.trim() || null,
       });
     setNewClass({ name: "", section: "" });
-    setLoading(false);
     load();
   };
 
   const deleteClass = async (id: string) => {
-    if (!confirm("Delete this class? This may affect students assigned to it."))
+    if (
+      !confirm("Delete this class? Students assigned to it will be affected.")
+    )
       return;
     await supabase.from("classes").delete().eq("id", id);
     load();
@@ -59,18 +58,16 @@ export default function ClassesPage() {
   };
 
   return (
-    <div className="pt-14 sm:pt-0">
+    <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <h1 className="page-title">Classes & Subjects</h1>
       </div>
 
-      <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="p-4 space-y-4">
         {/* Classes */}
-        <div className="card p-4 sm:p-5">
-          <h2 className="font-display font-semibold text-slate-800 mb-4">
-            Classes
-          </h2>
-          <div className="flex gap-2 mb-4">
+        <div className="card p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Classes</h2>
+          <div className="flex gap-2 mb-3">
             <input
               className="input flex-1"
               placeholder="Class name (e.g. Grade 5)"
@@ -81,31 +78,32 @@ export default function ClassesPage() {
               onKeyDown={(e) => e.key === "Enter" && addClass()}
             />
             <input
-              className="input w-20"
-              placeholder="Sec."
+              className="input w-16"
+              placeholder="Sec"
               value={newClass.section}
               onChange={(e) =>
                 setNewClass((f) => ({ ...f, section: e.target.value }))
               }
             />
-            <button
-              onClick={addClass}
-              disabled={loading}
-              className="btn-primary btn-sm shrink-0"
-            >
-              <Plus size={14} />
+            <button onClick={addClass} className="btn-primary btn-sm shrink-0">
+              <Plus size={16} />
             </button>
           </div>
           <div className="space-y-1">
+            {classes.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-4">
+                No classes yet. Add your first class above.
+              </p>
+            )}
             {classes.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-50"
               >
                 <span className="text-sm font-medium text-slate-800">
                   {c.name}{" "}
                   {c.section && (
-                    <span className="text-slate-500 font-normal">
+                    <span className="text-slate-400 font-normal">
                       ({c.section})
                     </span>
                   )}
@@ -114,24 +112,17 @@ export default function ClassesPage() {
                   onClick={() => deleteClass(c.id)}
                   className="text-slate-300 hover:text-red-500 transition-colors p-1"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             ))}
-            {classes.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-4">
-                No classes yet.
-              </p>
-            )}
           </div>
         </div>
 
         {/* Subjects */}
-        <div className="card p-4 sm:p-5">
-          <h2 className="font-display font-semibold text-slate-800 mb-4">
-            Subjects
-          </h2>
-          <div className="flex gap-2 mb-4">
+        <div className="card p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Subjects</h2>
+          <div className="flex gap-2 mb-3">
             <input
               className="input flex-1"
               placeholder="Subject name (e.g. Mathematics)"
@@ -143,14 +134,19 @@ export default function ClassesPage() {
               onClick={addSubject}
               className="btn-primary btn-sm shrink-0"
             >
-              <Plus size={14} />
+              <Plus size={16} />
             </button>
           </div>
           <div className="space-y-1">
+            {subjects.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-4">
+                No subjects yet.
+              </p>
+            )}
             {subjects.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50"
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-50"
               >
                 <span className="text-sm font-medium text-slate-800">
                   {s.name}
@@ -159,16 +155,22 @@ export default function ClassesPage() {
                   onClick={() => deleteSubject(s.id)}
                   className="text-slate-300 hover:text-red-500 transition-colors p-1"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={15} />
                 </button>
               </div>
             ))}
-            {subjects.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-4">
-                No subjects yet.
-              </p>
-            )}
           </div>
+        </div>
+
+        {/* Workflow tip */}
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700">
+          <p className="font-semibold mb-1">📌 Getting Started</p>
+          <ol className="space-y-1 text-xs list-decimal list-inside text-blue-600">
+            <li>Create your classes here first (e.g. Grade 5 A, Grade 6 B)</li>
+            <li>Add subjects (e.g. Maths, English, Science)</li>
+            <li>Go to Students and add students to each class</li>
+            <li>Use Fees → Generate to create monthly fee records</li>
+          </ol>
         </div>
       </div>
     </div>
