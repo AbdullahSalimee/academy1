@@ -7,11 +7,12 @@ const COOKIE_NAME = "academy_auth";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow login page and API routes through
+  // Allow login page, API routes, and static assets through
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api")
+    pathname.startsWith("/api") ||
+    pathname.match(/\.(png|jpg|jpeg|svg|gif|ico|css|js)$/)
   ) {
     return NextResponse.next();
   }

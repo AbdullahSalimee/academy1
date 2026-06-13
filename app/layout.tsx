@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Sidebar from "@/components/layout/Sidebar";
 import Providers from "./providers";
 const inter = Inter({ subsets: ["latin"] });
@@ -30,6 +31,7 @@ export default function RootLayout({
           <main className="flex-1 overflow-y-auto min-w-0">
             <Providers>{children}</Providers>
           </main>
+          <SpeedInsights />
         </div>
       </body>
     </html>

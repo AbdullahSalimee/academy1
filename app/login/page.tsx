@@ -29,20 +29,22 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#141115] flex items-center justify-center ">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
-            <span className="text-3xl">🏫</span>
+        <div className="text-center my-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg">
+            <span className="text-3xl">
+              <img src="/logo.png" alt="Logo" className="w-8 h-8" />
+            </span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Academy</h1>
-          <p className="text-slate-400 text-sm mt-1">Management System</p>
+          <h1 className="text-2xl font-bold text-white">Superior Academy</h1>
+          <p className="text-white text-sm mt-1">Management System</p>
         </div>
-        <div className="bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-700">
-          <h2 className="text-lg font-semibold text-white mb-1">
+        <div className="bg-white rounded-lg p-6 shadow-xl border border-[#001514]/50">
+          <h2 className="text-lg font-semibold text-[#141115] mb-1">
             Teacher Login
           </h2>
-          <p className="text-slate-400 text-sm mb-5">
+          <p className="text-[#141115] text-sm mb-5">
             Enter your password to continue
           </p>
           {error && (
