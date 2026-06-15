@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Class, MONTHS } from "@/types";
-import { RefreshCw, CheckCircle, Plus, X, CreditCard } from "lucide-react";
+import { CheckCircle, X, CreditCard } from "lucide-react";
 
 interface FeeRow {
   id: string;
@@ -23,12 +23,14 @@ interface FeeRow {
   students: { name: string; class_id: string };
 }
 
+type FeeStatus = "paid" | "partial" | "pending" | "overdue";
+
 export default function FeesPage() {
   const now = new Date();
   const [classes, setClasses] = useState<Class[]>([]);
   const [fees, setFees] = useState<FeeRow[]>([]);
+  const [schoolWideDue, setSchoolWideDue] = useState<number>(0);
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [filters, setFilters] = useState({
     class_id: "",
     month: String(now.getMonth() + 1),
@@ -54,6 +56,17 @@ export default function FeesPage() {
       .then(({ data }) => setClasses(data || []));
   }, []);
 
+  // Lazily ensure fee records exist for the current month, then load.
+  useEffect(() => {
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth() + 1;
+    supabase
+      .rpc("ensure_all_fees", { p_year: todayYear, p_month: todayMonth })
+      .then(() => loadFees())
+      .catch(() => loadFees());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadFees = useCallback(async () => {
     setLoading(true);
     let query = supabase
@@ -74,9 +87,32 @@ export default function FeesPage() {
     setLoading(false);
   }, [filters]);
 
+  // School-wide outstanding total (across ALL months/years)
+  const loadSchoolWideDue = useCallback(async () => {
+    const { data } = await supabase
+      .from("fees")
+      .select("amount, paid, fee_payments(amount_paid)")
+      .eq("paid", false);
+
+    const total = (data || []).reduce((sum: number, f: any) => {
+      const paidSoFar = (f.fee_payments || []).reduce(
+        (s: number, p: any) => s + Number(p.amount_paid),
+        0,
+      );
+      const remaining = Math.max(0, Number(f.amount) - paidSoFar);
+      return sum + remaining;
+    }, 0);
+
+    setSchoolWideDue(total);
+  }, []);
+
   useEffect(() => {
     loadFees();
   }, [loadFees]);
+
+  useEffect(() => {
+    loadSchoolWideDue();
+  }, [loadSchoolWideDue, fees]);
 
   const openPayModal = (fee: FeeRow) => {
     const payments = fee.fee_payments || [];
@@ -110,7 +146,6 @@ export default function FeesPage() {
 
   const undoPayment = async (feeId: string) => {
     if (!confirm("Remove last payment for this month?")) return;
-    // Delete the most recent payment
     const fee = fees.find((f) => f.id === feeId);
     if (!fee) return;
     const payments = [...(fee.fee_payments || [])].sort((a, b) =>
@@ -121,23 +156,6 @@ export default function FeesPage() {
     loadFees();
   };
 
-  const generateFees = async () => {
-    setGenerating(true);
-    try {
-      const { data } = await supabase.rpc("generate_monthly_fees", {
-        p_year: parseInt(filters.year),
-        p_month: parseInt(filters.month),
-      });
-      alert(`Generated ${data} new fee records.`);
-    } catch {
-      alert(
-        "Could not generate fees. Make sure the generate_monthly_fees function exists.",
-      );
-    }
-    setGenerating(false);
-    loadFees();
-  };
-
   const set = (k: string, v: string) => setFilters((f) => ({ ...f, [k]: v }));
 
   const totalPaid = useMemo(
@@ -145,7 +163,10 @@ export default function FeesPage() {
       fees.reduce((s, f) => {
         return (
           s +
-          (f.fee_payments || []).reduce((ps, p) => ps + Number(p.amount_paid), 0)
+          (f.fee_payments || []).reduce(
+            (ps, p) => ps + Number(p.amount_paid),
+            0,
+          )
         );
       }, 0),
     [fees],
@@ -165,18 +186,52 @@ export default function FeesPage() {
     [classes],
   );
 
+  // Determine status: paid / partial / pending (first 10 days, unpaid) / overdue (after day 10)
+  const isCurrentMonth =
+    parseInt(filters.month) === now.getMonth() + 1 &&
+    parseInt(filters.year) === now.getFullYear();
+  const dayOfMonth = now.getDate();
+
+  const getStatus = (f: FeeRow, amtPaid: number): FeeStatus => {
+    if (f.paid) return "paid";
+    if (amtPaid > 0) return "partial";
+    // Unpaid, no payments at all
+    if (isCurrentMonth && dayOfMonth <= 10) return "pending";
+    if (
+      !isCurrentMonth &&
+      (parseInt(filters.year) > now.getFullYear() ||
+        (parseInt(filters.year) === now.getFullYear() &&
+          parseInt(filters.month) > now.getMonth() + 1))
+    ) {
+      // future month, shouldn't normally happen, treat as pending
+      return "pending";
+    }
+    return "overdue";
+  };
+
+  const statusBadge: Record<FeeStatus, string> = {
+    paid: "badge-green",
+    partial: "badge-amber",
+    pending: "badge-yellow",
+    overdue: "badge-red",
+  };
+  const statusLabel: Record<FeeStatus, string> = {
+    paid: "Paid",
+    partial: "Partial",
+    pending: "Pending",
+    overdue: "Overdue",
+  };
+  const cardBorder: Record<FeeStatus, string> = {
+    paid: "",
+    partial: "border-amber-100",
+    pending: "border-yellow-200",
+    overdue: "border-red-100",
+  };
+
   return (
     <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <h1 className="page-title">Fees</h1>
-        <button
-          onClick={generateFees}
-          disabled={generating}
-          className="btn-primary btn-sm"
-        >
-          <RefreshCw size={14} className={generating ? "animate-spin" : ""} />
-          {generating ? "Generating..." : "Generate"}
-        </button>
       </div>
 
       {/* Filters */}
@@ -223,13 +278,16 @@ export default function FeesPage() {
       </div>
 
       {/* Summary */}
-      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex gap-4 text-xs font-medium">
+      <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
         <span className="text-slate-500">{fees.length} records</span>
         <span className="text-emerald-600">
           Collected: Rs.{totalPaid.toLocaleString()}
         </span>
         <span className="text-red-500">
-          Due: Rs.{totalDue.toLocaleString()}
+          Due (this view): Rs.{totalDue.toLocaleString()}
+        </span>
+        <span className="text-slate-700 ml-auto">
+          Total Outstanding (all months): Rs.{schoolWideDue.toLocaleString()}
         </span>
       </div>
 
@@ -240,13 +298,7 @@ export default function FeesPage() {
         )}
         {!loading && fees.length === 0 && (
           <div className="card p-10 text-center text-slate-400">
-            <p className="mb-2">No fee records.</p>
-            <button
-              onClick={generateFees}
-              className="text-blue-600 text-sm font-medium"
-            >
-              Generate fees for {MONTHS[parseInt(filters.month) - 1]} →
-            </button>
+            No fee records for this month.
           </div>
         )}
         {!loading &&
@@ -257,13 +309,10 @@ export default function FeesPage() {
               0,
             );
             const remaining = Number(f.amount) - amtPaid;
-            const isPartial = !f.paid && amtPaid > 0;
+            const status = getStatus(f, amtPaid);
 
             return (
-              <div
-                key={f.id}
-                className={`card p-4 ${!f.paid && !isPartial ? "border-red-100" : isPartial ? "border-amber-100" : ""}`}
-              >
+              <div key={f.id} className={`card p-4 ${cardBorder[status]}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-slate-900 truncate">
@@ -284,7 +333,6 @@ export default function FeesPage() {
                         </span>
                       )}
                     </div>
-                    {/* Payment history mini */}
                     {payments.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {payments.map((p) => (
@@ -300,13 +348,9 @@ export default function FeesPage() {
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    {f.paid ? (
-                      <span className="badge-green">Paid</span>
-                    ) : isPartial ? (
-                      <span className="badge-amber">Partial</span>
-                    ) : (
-                      <span className="badge-red">Unpaid</span>
-                    )}
+                    <span className={statusBadge[status]}>
+                      {statusLabel[status]}
+                    </span>
                     <div className="flex gap-2">
                       {!f.paid && (
                         <button
@@ -373,7 +417,8 @@ export default function FeesPage() {
                 autoFocus
               />
               <p className="text-xs text-slate-400 mt-1">
-                Can be partial (less) or advance (more than due).
+                Can be partial (less) or advance (more than due). Extra amounts
+                automatically carry forward to next month.
               </p>
             </div>
             <div>
