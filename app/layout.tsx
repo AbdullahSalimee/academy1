@@ -4,7 +4,11 @@ import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Sidebar from "@/components/layout/Sidebar";
 import Providers from "./providers";
-const inter = Inter({ subsets: ["latin"] });
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Academy Management",
@@ -26,9 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-slate-100 text-slate-900`}>
-        <div className="flex h-dvh overflow-hidden">
+        <div className="flex h-[100dvh] overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto min-w-0">
+          <main className="flex-1 overflow-y-auto min-w-0 overscroll-y-contain [-webkit-overflow-scrolling:touch] pb-16 sm:pb-0">
             <Providers>{children}</Providers>
           </main>
           <SpeedInsights />

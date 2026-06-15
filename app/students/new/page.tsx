@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Class } from "@/types";
@@ -59,12 +59,23 @@ export default function NewStudentPage() {
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} {c.section}
+        </option>
+      )),
+    [classes],
+  );
+
   return (
     <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <div className="flex items-center gap-3">
           <Link
             href="/students"
+            prefetch={false}
             className="text-slate-400 hover:text-slate-700"
           >
             <ArrowLeft size={20} />
@@ -88,6 +99,7 @@ export default function NewStudentPage() {
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="Full name"
+                autoComplete="off"
               />
             </div>
             <div>
@@ -97,6 +109,7 @@ export default function NewStudentPage() {
                 value={form.father_name}
                 onChange={(e) => set("father_name", e.target.value)}
                 placeholder="Father's name"
+                autoComplete="off"
               />
             </div>
             <div>
@@ -107,11 +120,7 @@ export default function NewStudentPage() {
                 onChange={(e) => set("class_id", e.target.value)}
               >
                 <option value="">Select class...</option>
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.section}
-                  </option>
-                ))}
+                {classOptions}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -119,6 +128,7 @@ export default function NewStudentPage() {
                 <label className="label">Monthly Fee (Rs.) *</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input"
                   value={form.default_monthly_fee}
                   onChange={(e) => set("default_monthly_fee", e.target.value)}
@@ -143,6 +153,8 @@ export default function NewStudentPage() {
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
                 placeholder="03XX-XXXXXXX"
+                inputMode="tel"
+                autoComplete="off"
               />
             </div>
             <div>
@@ -162,7 +174,7 @@ export default function NewStudentPage() {
               >
                 <Save size={15} /> {loading ? "Saving..." : "Admit Student"}
               </button>
-              <Link href="/students" className="btn-secondary">
+              <Link href="/students" prefetch={false} className="btn-secondary">
                 Cancel
               </Link>
             </div>

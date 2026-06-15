@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Class, Subject } from "@/types";
 import { Plus, Trash2 } from "lucide-react";
@@ -10,18 +10,18 @@ export default function ClassesPage() {
   const [newClass, setNewClass] = useState({ name: "", section: "" });
   const [newSubject, setNewSubject] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const [cls, sub] = await Promise.all([
       supabase.from("classes").select("*").order("name"),
       supabase.from("subjects").select("*").order("name"),
     ]);
     setClasses(cls.data || []);
     setSubjects(sub.data || []);
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const addClass = async () => {
     if (!newClass.name) return;
@@ -76,6 +76,7 @@ export default function ClassesPage() {
                 setNewClass((f) => ({ ...f, name: e.target.value }))
               }
               onKeyDown={(e) => e.key === "Enter" && addClass()}
+              autoComplete="off"
             />
             <input
               className="input w-16"
@@ -84,6 +85,7 @@ export default function ClassesPage() {
               onChange={(e) =>
                 setNewClass((f) => ({ ...f, section: e.target.value }))
               }
+              autoComplete="off"
             />
             <button onClick={addClass} className="btn-primary btn-sm shrink-0">
               <Plus size={16} />
@@ -129,6 +131,7 @@ export default function ClassesPage() {
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addSubject()}
+              autoComplete="off"
             />
             <button
               onClick={addSubject}

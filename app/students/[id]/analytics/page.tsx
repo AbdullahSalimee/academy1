@@ -3,25 +3,50 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { MONTHS, MONTHS_SHORT } from '@/types'
+import { Suspense } from 'react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function StudentAnalyticsPage({ params }: { params: { id: string } }) {
+function AnalyticsSkeleton() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="card p-3 text-center animate-pulse">
+            <div className="h-6 w-10 bg-slate-200 rounded mx-auto mb-2" />
+            <div className="h-3 w-14 bg-slate-100 rounded mx-auto" />
+          </div>
+        ))}
+      </div>
+      <div className="card p-4 animate-pulse space-y-2">
+        <div className="h-4 w-32 bg-slate-200 rounded" />
+        <div className="h-3 w-full bg-slate-100 rounded" />
+        <div className="h-3 w-full bg-slate-100 rounded" />
+        <div className="h-3 w-2/3 bg-slate-100 rounded" />
+      </div>
+      <div className="card p-6 animate-pulse">
+        <div className="h-4 w-24 bg-slate-200 rounded" />
+      </div>
+    </div>
+  )
+}
+
+async function AnalyticsContent({ id }: { id: string }) {
   const { data: student } = await supabase
-    .from('students').select('*, classes(name, section)').eq('id', params.id).single()
+    .from('students').select('*, classes(name, section)').eq('id', id).single()
   if (!student) return notFound()
 
-  const { data: marks } = await supabase
-    .from('marks').select('*, tests(name, test_date, total_marks, subjects(name))')
-    .eq('student_id', params.id).order('created_at', { ascending: true })
-
-  const { data: fees } = await supabase
-    .from('fees').select('*, fee_payments(*)').eq('student_id', params.id)
-    .order('year').order('month')
-
-  const { data: attData } = await supabase
-    .from('attendance').select('status, date').eq('student_id', params.id)
-    .order('date', { ascending: false }).limit(90)
+  const [{ data: marks }, { data: fees }, { data: attData }] = await Promise.all([
+    supabase
+      .from('marks').select('*, tests(name, test_date, total_marks, subjects(name))')
+      .eq('student_id', id).order('created_at', { ascending: true }),
+    supabase
+      .from('fees').select('*, fee_payments(*)').eq('student_id', id)
+      .order('year').order('month'),
+    supabase
+      .from('attendance').select('status, date').eq('student_id', id)
+      .order('date', { ascending: false }).limit(90),
+  ])
 
   const markList = (marks || []) as any[]
   const feeList = (fees || []) as any[]
@@ -77,10 +102,10 @@ export default async function StudentAnalyticsPage({ params }: { params: { id: s
   const cls = student.classes as any
 
   return (
-    <div className="pb-20 sm:pb-0">
+    <>
       <div className="page-header">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href={`/students/${params.id}`} className="text-slate-400 shrink-0"><ArrowLeft size={20} /></Link>
+          <Link href={`/students/${id}`} prefetch={false} className="text-slate-400 shrink-0"><ArrowLeft size={20} /></Link>
           <div className="min-w-0">
             <h1 className="page-title truncate">{student.name}</h1>
             <p className="text-xs text-slate-500">{cls?.name} {cls?.section} · Analytics</p>
@@ -231,6 +256,16 @@ export default async function StudentAnalyticsPage({ params }: { params: { id: s
           )}
         </div>
       </div>
+    </>
+  )
+}
+
+export default function StudentAnalyticsPage({ params }: { params: { id: string } }) {
+  return (
+    <div className="pb-20 sm:pb-0">
+      <Suspense fallback={<AnalyticsSkeleton />}>
+        <AnalyticsContent id={params.id} />
+      </Suspense>
     </div>
   )
 }

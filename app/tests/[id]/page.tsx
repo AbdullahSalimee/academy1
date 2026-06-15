@@ -2,27 +2,43 @@ import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function TestDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { data: test } = await supabase
-    .from("tests")
-    .select("*, classes(name, section), subjects(name)")
-    .eq("id", params.id)
-    .single();
+function TestDetailSkeleton() {
+  return (
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl p-4 text-center bg-slate-50 animate-pulse">
+            <div className="h-6 w-10 bg-slate-200 rounded mx-auto mb-2" />
+            <div className="h-3 w-16 bg-slate-100 rounded mx-auto" />
+          </div>
+        ))}
+      </div>
+      <div className="card p-6 animate-pulse">
+        <div className="h-4 w-32 bg-slate-200 rounded" />
+      </div>
+    </div>
+  );
+}
+
+async function TestDetailContent({ id }: { id: string }) {
+  const [{ data: test }, { data: marks }] = await Promise.all([
+    supabase
+      .from("tests")
+      .select("*, classes(name, section), subjects(name)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("marks")
+      .select("*, students(name)")
+      .eq("test_id", id)
+      .order("obtained_marks", { ascending: false }),
+  ]);
 
   if (!test) return notFound();
-
-  const { data: marks } = await supabase
-    .from("marks")
-    .select("*, students(name)")
-    .eq("test_id", params.id)
-    .order("obtained_marks", { ascending: false });
 
   const markList = marks || [];
   const present = markList.filter(
@@ -42,11 +58,12 @@ export default async function TestDetailPage({
   const sub = test.subjects as any;
 
   return (
-    <div className="pt-14 sm:pt-0">
+    <>
       <div className="page-header">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/tests"
+            prefetch={false}
             className="text-slate-400 hover:text-slate-700 shrink-0"
           >
             <ArrowLeft size={18} />
@@ -59,7 +76,8 @@ export default async function TestDetailPage({
           </div>
         </div>
         <Link
-          href={`/tests/${params.id}/marks`}
+          href={`/tests/${id}/marks`}
+          prefetch={false}
           className="btn-primary btn-sm shrink-0"
         >
           Enter Marks
@@ -183,6 +201,20 @@ export default async function TestDetailPage({
           </table>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function TestDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return (
+    <div className="pt-14 sm:pt-0">
+      <Suspense fallback={<TestDetailSkeleton />}>
+        <TestDetailContent id={params.id} />
+      </Suspense>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Class } from "@/types";
@@ -74,11 +74,21 @@ export default function EditStudentPage({
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} {c.section}
+        </option>
+      )),
+    [classes],
+  );
+
   return (
     <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <div className="flex items-center gap-3">
-          <Link href={`/students/${params.id}`} className="text-slate-400">
+          <Link href={`/students/${params.id}`} prefetch={false} className="text-slate-400">
             <ArrowLeft size={20} />
           </Link>
           <h1 className="page-title">Edit Student</h1>
@@ -98,6 +108,7 @@ export default function EditStudentPage({
                 className="input"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
+                autoComplete="off"
               />
             </div>
             <div>
@@ -106,6 +117,7 @@ export default function EditStudentPage({
                 className="input"
                 value={form.father_name}
                 onChange={(e) => set("father_name", e.target.value)}
+                autoComplete="off"
               />
             </div>
             <div>
@@ -115,11 +127,7 @@ export default function EditStudentPage({
                 value={form.class_id}
                 onChange={(e) => set("class_id", e.target.value)}
               >
-                {classes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.section}
-                  </option>
-                ))}
+                {classOptions}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -127,6 +135,7 @@ export default function EditStudentPage({
                 <label className="label">Monthly Fee (Rs.) *</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input"
                   value={form.default_monthly_fee}
                   onChange={(e) => set("default_monthly_fee", e.target.value)}
@@ -139,6 +148,8 @@ export default function EditStudentPage({
                   className="input"
                   value={form.phone}
                   onChange={(e) => set("phone", e.target.value)}
+                  inputMode="tel"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -169,7 +180,7 @@ export default function EditStudentPage({
               >
                 <Save size={15} /> {loading ? "Saving..." : "Save Changes"}
               </button>
-              <Link href={`/students/${params.id}`} className="btn-secondary">
+              <Link href={`/students/${params.id}`} prefetch={false} className="btn-secondary">
                 Cancel
               </Link>
             </div>

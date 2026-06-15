@@ -1,6 +1,7 @@
 "use client";
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 
 function LoginForm() {
   const router = useRouter();
@@ -34,7 +35,14 @@ function LoginForm() {
         <div className="text-center my-6">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg">
             <span className="text-3xl">
-              <img src="/logo.png" alt="Logo" className="w-8 h-8" />
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+                priority
+              />
             </span>
           </div>
           <h1 className="text-2xl font-bold text-white">Superior Academy</h1>

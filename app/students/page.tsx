@@ -1,8 +1,100 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
+
+function ListSkeleton() {
+  return (
+    <div className="p-4 space-y-2">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="card p-4 flex items-center gap-3 animate-pulse">
+          <div className="w-10 h-10 rounded-full bg-slate-200 shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="h-3.5 w-2/3 bg-slate-200 rounded" />
+            <div className="h-3 w-1/3 bg-slate-100 rounded" />
+          </div>
+          <div className="h-5 w-12 bg-slate-100 rounded-full shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function StudentsList({
+  classId,
+  search,
+  showInactive,
+}: {
+  classId?: string;
+  search: string;
+  showInactive: boolean;
+}) {
+  let query = supabase
+    .from("students")
+    .select("*, classes(name, section)")
+    .order("name");
+  if (!showInactive) query = query.neq("is_active", false);
+  if (classId) query = query.eq("class_id", classId);
+  if (search) query = query.ilike("name", `%${search}%`);
+
+  const { data: students } = await query;
+  const list = students || [];
+
+  return (
+    <div className="p-4 space-y-2">
+      <p className="text-xs text-slate-400 font-medium">
+        {list.length} student{list.length !== 1 ? "s" : ""}
+      </p>
+
+      {list.length === 0 && (
+        <div className="card p-10 text-center text-slate-400">
+          <Users className="mx-auto mb-2 opacity-30" size={32} />
+          <p>No students found.</p>
+          <Link
+            href="/students/new"
+            className="text-blue-600 text-sm mt-2 inline-block"
+          >
+            Add first student →
+          </Link>
+        </div>
+      )}
+
+      {list.map((s: any) => (
+        <Link
+          key={s.id}
+          href={`/students/${s.id}`}
+          prefetch={false}
+          className="card p-4 flex items-center gap-3 active:scale-[0.98] transition-transform block"
+        >
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <span className="text-blue-700 font-bold text-sm">
+              {s.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-slate-900 truncate">
+              {s.name}
+            </div>
+            <div className="text-xs text-slate-500 truncate">
+              {s.classes?.name} {s.classes?.section}{" "}
+              {s.father_name ? `· ${s.father_name}` : ""}
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className={s.is_active ? "badge-green" : "badge-red"}>
+              {s.is_active ? "Active" : "Left"}
+            </span>
+            <span className="text-xs text-slate-400">
+              Rs. {Number(s.default_monthly_fee).toLocaleString()}
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default async function StudentsPage({
   searchParams,
@@ -18,22 +110,11 @@ export default async function StudentsPage({
     .select("id, name, section")
     .order("name");
 
-  let query = supabase
-    .from("students")
-    .select("*, classes(name, section)")
-    .order("name");
-  if (!showInactive) query = query.neq("is_active", false);
-  if (classId) query = query.eq("class_id", classId);
-  if (search) query = query.ilike("name", `%${search}%`);
-
-  const { data: students } = await query;
-  const list = students || [];
-
   return (
     <div className="pb-20 sm:pb-0">
       <div className="page-header">
         <h1 className="page-title">Students</h1>
-        <Link href="/students/new" className="btn-primary btn-sm">
+        <Link href="/students/new" prefetch={false} className="btn-primary btn-sm">
           <Plus size={15} /> Add
         </Link>
       </div>
@@ -72,61 +153,15 @@ export default async function StudentsPage({
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
-          <Link href="/students" className="btn-secondary btn-sm shrink-0">
+          <Link href="/students" prefetch={false} className="btn-secondary btn-sm shrink-0">
             Reset
           </Link>
         </div>
       </form>
 
-      <div className="p-4 space-y-2">
-        <p className="text-xs text-slate-400 font-medium">
-          {list.length} student{list.length !== 1 ? "s" : ""}
-        </p>
-
-        {list.length === 0 && (
-          <div className="card p-10 text-center text-slate-400">
-            <Users className="mx-auto mb-2 opacity-30" size={32} />
-            <p>No students found.</p>
-            <Link
-              href="/students/new"
-              className="text-blue-600 text-sm mt-2 inline-block"
-            >
-              Add first student →
-            </Link>
-          </div>
-        )}
-
-        {list.map((s: any) => (
-          <Link
-            key={s.id}
-            href={`/students/${s.id}`}
-            className="card p-4 flex items-center gap-3 active:scale-[0.98] transition-transform block"
-          >
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-              <span className="text-blue-700 font-bold text-sm">
-                {s.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-slate-900 truncate">
-                {s.name}
-              </div>
-              <div className="text-xs text-slate-500 truncate">
-                {s.classes?.name} {s.classes?.section}{" "}
-                {s.father_name ? `· ${s.father_name}` : ""}
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <span className={s.is_active ? "badge-green" : "badge-red"}>
-                {s.is_active ? "Active" : "Left"}
-              </span>
-              <span className="text-xs text-slate-400">
-                Rs. {Number(s.default_monthly_fee).toLocaleString()}
-              </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <Suspense fallback={<ListSkeleton />} key={`${classId}-${search}-${showInactive}`}>
+        <StudentsList classId={classId} search={search} showInactive={showInactive} />
+      </Suspense>
     </div>
   );
 }

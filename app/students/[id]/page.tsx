@@ -11,39 +11,57 @@ import {
   Edit,
 } from "lucide-react";
 import { MONTHS } from "@/types";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudentDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+function DetailSkeleton() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="card p-3 text-center animate-pulse">
+            <div className="h-6 w-10 bg-slate-200 rounded mx-auto mb-2" />
+            <div className="h-3 w-14 bg-slate-100 rounded mx-auto" />
+          </div>
+        ))}
+      </div>
+      <div className="card p-4 space-y-3 animate-pulse">
+        <div className="h-4 w-20 bg-slate-200 rounded" />
+        <div className="h-3 w-2/3 bg-slate-100 rounded" />
+        <div className="h-3 w-1/2 bg-slate-100 rounded" />
+        <div className="h-3 w-3/4 bg-slate-100 rounded" />
+      </div>
+      <div className="card p-6 animate-pulse">
+        <div className="h-4 w-24 bg-slate-200 rounded" />
+      </div>
+    </div>
+  );
+}
+
+async function StudentDetails({ id }: { id: string }) {
   const { data: student } = await supabase
     .from("students")
     .select("*, classes(name, section)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
   if (!student) return notFound();
 
-  // Fetch fees with their payments
-  const { data: fees } = await supabase
-    .from("fees")
-    .select("*, fee_payments(*)")
-    .eq("student_id", params.id)
-    .order("year", { ascending: false })
-    .order("month", { ascending: false });
-
-  const { data: marks } = await supabase
-    .from("marks")
-    .select("*, tests(name, test_date, total_marks, subjects(name))")
-    .eq("student_id", params.id)
-    .order("created_at", { ascending: false });
-
-  const { data: attData } = await supabase
-    .from("attendance")
-    .select("status")
-    .eq("student_id", params.id);
+  // Fetch fees, marks and attendance in parallel
+  const [{ data: fees }, { data: marks }, { data: attData }] = await Promise.all([
+    supabase
+      .from("fees")
+      .select("*, fee_payments(*)")
+      .eq("student_id", id)
+      .order("year", { ascending: false })
+      .order("month", { ascending: false }),
+    supabase
+      .from("marks")
+      .select("*, tests(name, test_date, total_marks, subjects(name))")
+      .eq("student_id", id)
+      .order("created_at", { ascending: false }),
+    supabase.from("attendance").select("status").eq("student_id", id),
+  ]);
 
   const feeList = fees || [];
   const markList = marks || [];
@@ -84,10 +102,10 @@ export default async function StudentDetailPage({
   const cls = student.classes as any;
 
   return (
-    <div className="pb-20 sm:pb-0">
+    <>
       <div className="page-header">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/students" className="text-slate-400 shrink-0">
+          <Link href="/students" prefetch={false} className="text-slate-400 shrink-0">
             <ArrowLeft size={20} />
           </Link>
           <div className="min-w-0">
@@ -99,13 +117,15 @@ export default async function StudentDetailPage({
         </div>
         <div className="flex gap-2">
           <Link
-            href={`/students/${params.id}/analytics`}
+            href={`/students/${id}/analytics`}
+            prefetch={false}
             className="btn-secondary btn-sm"
           >
             <TrendingUp size={14} /> Analytics
           </Link>
           <Link
-            href={`/students/${params.id}/edit`}
+            href={`/students/${id}/edit`}
+            prefetch={false}
             className="btn-primary btn-sm"
           >
             <Edit size={14} /> Edit
@@ -295,6 +315,20 @@ export default async function StudentDetailPage({
           )}
         </div>
       </div>
+    </>
+  );
+}
+
+export default function StudentDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return (
+    <div className="pb-20 sm:pb-0">
+      <Suspense fallback={<DetailSkeleton />}>
+        <StudentDetails id={params.id} />
+      </Suspense>
     </div>
   );
 }

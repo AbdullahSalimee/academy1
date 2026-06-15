@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Class, MONTHS } from "@/types";
 import { RefreshCw, CheckCircle, Plus, X, CreditCard } from "lucide-react";
@@ -140,15 +140,29 @@ export default function FeesPage() {
 
   const set = (k: string, v: string) => setFilters((f) => ({ ...f, [k]: v }));
 
-  const totalPaid = fees.reduce((s, f) => {
-    return (
-      s +
-      (f.fee_payments || []).reduce((ps, p) => ps + Number(p.amount_paid), 0)
-    );
-  }, 0);
-  const totalDue = fees.reduce(
-    (s, f) => s + (!f.paid ? Number(f.amount) : 0),
-    0,
+  const totalPaid = useMemo(
+    () =>
+      fees.reduce((s, f) => {
+        return (
+          s +
+          (f.fee_payments || []).reduce((ps, p) => ps + Number(p.amount_paid), 0)
+        );
+      }, 0),
+    [fees],
+  );
+  const totalDue = useMemo(
+    () => fees.reduce((s, f) => s + (!f.paid ? Number(f.amount) : 0), 0),
+    [fees],
+  );
+
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} {c.section}
+        </option>
+      )),
+    [classes],
   );
 
   return (
@@ -204,11 +218,7 @@ export default function FeesPage() {
           onChange={(e) => set("class_id", e.target.value)}
         >
           <option value="">All Classes</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} {c.section}
-            </option>
-          ))}
+          {classOptions}
         </select>
       </div>
 
@@ -352,6 +362,7 @@ export default function FeesPage() {
               <label className="label">Amount Received (Rs.) *</label>
               <input
                 type="number"
+                inputMode="numeric"
                 className="input"
                 value={payForm.amount}
                 onChange={(e) =>

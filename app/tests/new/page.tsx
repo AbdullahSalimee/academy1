@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Class, Subject } from "@/types";
@@ -62,11 +62,31 @@ export default function NewTestPage() {
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} {c.section}
+        </option>
+      )),
+    [classes],
+  );
+
+  const subjectOptions = useMemo(
+    () =>
+      subjects.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.name}
+        </option>
+      )),
+    [subjects],
+  );
+
   return (
     <div className="pt-14 sm:pt-0">
       <div className="page-header">
         <div className="flex items-center gap-3">
-          <Link href="/tests" className="text-slate-400 hover:text-slate-700">
+          <Link href="/tests" prefetch={false} className="text-slate-400 hover:text-slate-700">
             <ArrowLeft size={18} />
           </Link>
           <h1 className="page-title">Create New Test</h1>
@@ -89,6 +109,7 @@ export default function NewTestPage() {
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="e.g. Monthly Test April 2025"
+                autoComplete="off"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -100,11 +121,7 @@ export default function NewTestPage() {
                   onChange={(e) => set("class_id", e.target.value)}
                 >
                   <option value="">Select class...</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.section}
-                    </option>
-                  ))}
+                  {classOptions}
                 </select>
               </div>
               <div>
@@ -115,11 +132,7 @@ export default function NewTestPage() {
                   onChange={(e) => set("subject_id", e.target.value)}
                 >
                   <option value="">Select subject...</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
+                  {subjectOptions}
                 </select>
               </div>
             </div>
@@ -137,6 +150,7 @@ export default function NewTestPage() {
                 <label className="label">Total Marks *</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   className="input"
                   value={form.total_marks}
                   onChange={(e) => set("total_marks", e.target.value)}
@@ -153,7 +167,7 @@ export default function NewTestPage() {
                 <Save size={15} />{" "}
                 {loading ? "Creating..." : "Create & Enter Marks"}
               </button>
-              <Link href="/tests" className="btn-secondary">
+              <Link href="/tests" prefetch={false} className="btn-secondary">
                 Cancel
               </Link>
             </div>

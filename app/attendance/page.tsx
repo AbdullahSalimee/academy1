@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Class } from "@/types";
 import { Save, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
@@ -14,6 +14,12 @@ interface StudentAtt {
 function formatDate(d: Date) {
   return d.toISOString().split("T")[0];
 }
+
+const statusColors: Record<AttStatus, { btn: string; row: string; label: string }> = {
+  present: { btn: "bg-emerald-500 text-white", row: "", label: "P" },
+  absent: { btn: "bg-red-500 text-white", row: "bg-red-50/60", label: "A" },
+  late: { btn: "bg-amber-500 text-white", row: "bg-amber-50/60", label: "L" },
+};
 
 export default function AttendancePage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -70,14 +76,14 @@ export default function AttendancePage() {
     load();
   }, [load]);
 
-  const setStatus = (idx: number, status: AttStatus) => {
+  const setStatus = useCallback((idx: number, status: AttStatus) => {
     setRows((prev) => {
       const next = [...prev];
       next[idx] = { ...next[idx], status };
       return next;
     });
     setSaved(false);
-  };
+  }, []);
 
   const markAll = (status: AttStatus) => {
     setRows((prev) => prev.map((r) => ({ ...r, status })));
@@ -111,18 +117,28 @@ export default function AttendancePage() {
     setDate(formatDate(d));
   };
 
-  const present = rows.filter((r) => r.status === "present").length;
-  const absent = rows.filter((r) => r.status === "absent").length;
-  const late = rows.filter((r) => r.status === "late").length;
+  const present = useMemo(
+    () => rows.filter((r) => r.status === "present").length,
+    [rows],
+  );
+  const absent = useMemo(
+    () => rows.filter((r) => r.status === "absent").length,
+    [rows],
+  );
+  const late = useMemo(
+    () => rows.filter((r) => r.status === "late").length,
+    [rows],
+  );
 
-  const statusColors: Record<
-    AttStatus,
-    { btn: string; row: string; label: string }
-  > = {
-    present: { btn: "bg-emerald-500 text-white", row: "", label: "P" },
-    absent: { btn: "bg-red-500 text-white", row: "bg-red-50/60", label: "A" },
-    late: { btn: "bg-amber-500 text-white", row: "bg-amber-50/60", label: "L" },
-  };
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name} {c.section}
+        </option>
+      )),
+    [classes],
+  );
 
   return (
     <div className="pb-20 sm:pb-0">
@@ -175,11 +191,7 @@ export default function AttendancePage() {
             className="input flex-1"
           >
             <option value="">Select class...</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} {c.section}
-              </option>
-            ))}
+            {classOptions}
           </select>
           <button
             onClick={() => markAll("present")}

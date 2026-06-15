@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -75,12 +75,12 @@ export default function MarksEntryPage() {
     [],
   );
 
-  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, idx: number) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
       inputRefs.current[idx + 1]?.focus();
     }
-  };
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -130,13 +130,15 @@ export default function MarksEntryPage() {
     );
   };
 
+  const totalMarks = test?.total_marks;
+
+  const entered = useMemo(
+    () => rows.filter((r) => r.obtained_marks !== "" || r.is_absent).length,
+    [rows],
+  );
+
   if (!test)
     return <div className="pt-14 sm:pt-0 p-8 text-slate-400">Loading...</div>;
-
-  const totalMarks = test.total_marks;
-  const entered = rows.filter(
-    (r) => r.obtained_marks !== "" || r.is_absent,
-  ).length;
 
   return (
     <div className="pt-14 sm:pt-0">
@@ -144,6 +146,7 @@ export default function MarksEntryPage() {
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/tests"
+            prefetch={false}
             className="text-slate-400 hover:text-slate-700 shrink-0"
           >
             <ArrowLeft size={18} />
@@ -221,6 +224,7 @@ export default function MarksEntryPage() {
                 <div className="flex items-center gap-3">
                   <input
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     max={totalMarks}
                     disabled={row.is_absent}
@@ -282,6 +286,7 @@ export default function MarksEntryPage() {
                           inputRefs.current[idx] = el;
                         }}
                         type="number"
+                        inputMode="decimal"
                         min="0"
                         max={totalMarks}
                         disabled={row.is_absent}
